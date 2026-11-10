@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | SmartSpend{% endblock %}
+{% block content %}
+<section class="dashboard-head">
+  <div><div class="eyebrow">YOUR FINANCIAL SNAPSHOT</div><h1>Good to see you, {{ session.get('user_name') }}.</h1><p class="muted">Here's how your money is looking this month.</p></div>
+  <span class="month-chip">{{ month }}</span>
+</section>
+
+<section class="stats-grid">
+  <article class="stat-card"><span class="stat-title">Spent this month</span><strong>₹{{ "%.2f"|format(spent) }}</strong><small>Across all categories</small></article>
+  <article class="stat-card"><span class="stat-title">Monthly budget</span><strong>₹{{ "%.2f"|format(budget) }}</strong><small>Set your spending limit</small></article>
+  <article class="stat-card"><span class="stat-title">Budget remaining</span><strong class="{% if remaining < 0 %}negative{% else %}positive-text{% endif %}">₹{{ "%.2f"|format(remaining) }}</strong><small>{% if budget > 0 %}{{ percent }}% of budget used{% else %}Add a budget to get started{% endif %}</small></article>
+</section>
+
+<section class="dashboard-grid">
+  <div class="panel">
+    <div class="panel-heading"><div><h2>Monthly budget</h2><p class="muted">Track your spending against your limit.</p></div></div>
+    <form class="inline-form" method="POST" action="{{ url_for('set_budget') }}">
+      <input type="number" name="amount" min="0.01" step="0.01" placeholder="Enter monthly budget" required>
+      <button class="button primary" type="submit">Save budget</button>
+    </form>
+    <div class="progress-track"><div class="progress-fill" style="width:{{ percent }}%"></div></div>
+    <div class="progress-labels"><span>₹{{ "%.2f"|format(spent) }} spent</span><span>{{ percent }}%</span></div>
+  </div>
+  <div class="panel add-panel">
+    <div class="panel-heading"><div><h2>Add an expense</h2><p class="muted">Record a new transaction.</p></div></div>
+    <form method="POST" action="{{ url_for('add_expense') }}" class="expense-form">
+      <label>What did you spend on?<input name="title" maxlength="150" placeholder="e.g. Lunch with friends" required></label>
+      <div class="two-fields">
+        <label>Amount (₹)<input name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required></label>
+        <label>Category<select name="category">{% for c in ["Food","Travel","Shopping","Education","Bills","Health","Entertainment","Other"] %}<option>{{ c }}</option>{% endfor %}</select></label>
+      </div>
+      <label>Date<input name="expense_date" type="date" value="{{ today }}" required></label>
+      <button class="button primary full" type="submit">＋ Add expense</button>
+    </form>
+  </div>
+</section>
+
+<section class="panel transactions">
+  <div class="panel-heading"><div><h2>Recent transactions</h2><p class="muted">Your latest recorded expenses.</p></div></div>
+  {% if expenses %}
+  <div class="table-scroll"><table><thead><tr><th>DESCRIPTION</th><th>CATEGORY</th><th>DATE</th><th>AMOUNT</th><th></th></tr></thead><tbody>
+  {% for e in expenses %}<tr><td class="transaction-title"><span class="category-icon">{{ e.category[:1] }}</span>{{ e.title }}</td><td><span class="category-pill">{{ e.category }}</span></td><td>{{ e.expense_date }}</td><td class="amount-cell">− ₹{{ "%.2f"|format(e.amount) }}</td><td><form method="POST" action="{{ url_for('delete_expense', expense_id=e.id) }}" onsubmit="return confirm('Delete this expense?')"><button class="delete-button" title="Delete expense">×</button></form></td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<div class="empty-state"><div>↗</div><h3>No expenses yet</h3><p>Add your first expense to start seeing your spending clearly.</p></div>{% endif %}
+</section>
+{% endblock %}
